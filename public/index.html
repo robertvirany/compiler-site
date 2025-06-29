@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>C Compiler Explorer</title>
+</head>
+<body>
+  <h1>C Compiler Explorer</h1>
+  <textarea id="code" rows="10" cols="80">#include &lt;stdio.h&gt;\nint main() { return 0; }</textarea>
+  <br>
+  <select id="mode">
+    <option value="asm">Assembly</option>
+    <option value="ir">LLVM IR</option>
+  </select>
+  <select id="compiler">
+    <option value="gcc">GCC</option>
+    <option value="clang">Clang</option>
+    <option value="msvc">MSVC</option>    
+  </select>
+  <button onclick="compile()">Compile</button>
+  <pre id="output"></pre>
+
+  <script>
+    async function compile() {
+      const code = document.getElementById("code").value;
+      const mode = document.getElementById("mode").value;
+
+      const res = await fetch("/compile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, mode })
+      });
+
+      const data = await res.json();
+      document.getElementById("output").textContent =
+        data.error ? `Error:\n${data.output}\n${data.error}` : data.output;
+    }
+  </script>
+</body>
+</html>
