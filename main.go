@@ -56,7 +56,7 @@ func compileHandler(w http.ResponseWriter, r *http.Request) {
 			cmd = exec.Command("clang", "-E", tmpFile.Name(), "-o", "-")
 		case "asm":
 			cmd = exec.Command("clang", "-S", tmpFile.Name(), "-o", "-")
-		case "llvm ir":
+		case "ir":
 			cmd = exec.Command("clang", "-S", "-emit-llvm", tmpFile.Name(), "-o", "-")
 		case "bitcode":
 			cmd = exec.Command("clang", "-c", "-emit-llvm", tmpFile.Name(), "-o", "-")

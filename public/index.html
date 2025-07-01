@@ -1,33 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="bg-gray-100">
 <head>
   <meta charset="UTF-8">
   <title>C Compiler Explorer</title>
   <script src="loader.js" defer></script>
-</head>
-<body>
-  <h1>C Compiler Explorer</h1>
-  <textarea id="code" rows="10" cols="80">#include &lt;stdio.h&gt;\nint main() { return 0; }</textarea>
-  <br>
-  <select id="compiler">
-    <option value="gcc">GCC</option>
-    <option value="clang">Clang</option>
-  </select>
-  <select id="mode">
-    <option value="preprocess">Preprocess</option>
-    <option value="ir">LLVM IR (Clang only)</option>
-    <option value="asm">Assembly</option>
-    <option value="bin">Executable</option>
-  </select>
-
-  <button onclick="compile()">Compile</button>
-  <pre id="output"></pre>
-
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/clike/clike.min.js"></script>
   <script>
+    let editor;
+    document.addEventListener('DOMContentLoaded', () => {
+      editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+        lineNumbers: true,
+        mode: "text/x-csrc",
+        theme: "default"
+      });
+    });
+
     async function compile() {
-      const code = document.getElementById("code").value;
+      const code = editor.getValue();
       const compiler = document.getElementById("compiler").value;
       const mode = document.getElementById("mode").value;
+
+      const btn = document.getElementById("compileBtn");
+      const loader = document.getElementById("loader");
+      btn.disabled = true;
+      loader.classList.remove("hidden");
 
       const res = await fetch("/compile", {
         method: "POST",
@@ -38,7 +37,41 @@
       const data = await res.json();
       document.getElementById("output").textContent =
         data.error ? `Error:\n${data.output}\n${data.error}` : data.output;
+
+      loader.classList.add("hidden");
+      btn.disabled = false;
     }
   </script>
+</head>
+<body class="text-gray-900 font-sans">
+  <div class="max-w-3xl mx-auto mt-10 p-6 bg-white shadow-md rounded-lg">
+    <h1 class="text-2xl font-bold mb-4 text-center">C Compiler Explorer</h1>
+
+    <label for="code" class="block text-sm font-medium mb-2">Source Code</label>
+    <textarea id="code" name="code">
+      #include <stdio.h>
+      int main() { return 0; }
+    </textarea>
+
+    <div class="flex flex-col sm:flex-row gap-4 my-4">
+      <select id="compiler" class="flex-1 p-2 border rounded-md">
+        <option value="gcc">GCC</option>
+        <option value="clang">Clang</option>
+      </select>
+      <select id="mode" class="flex-1 p-2 border rounded-md">
+        <option value="preprocess">Preprocess</option>
+        <option value="ir">LLVM IR</option>
+        <option value="asm">Assembly</option>
+        <option value="bin">Executable</option>
+      </select>
+    </div>
+
+    <button id="compileBtn" onclick="compile()" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition">
+      Compile
+    </button>
+    <div id="loader" class="mt-2 text-center text-sm text-gray-500 hidden">Compiling...</div>
+
+    <pre id="output" class="mt-6 p-4 bg-gray-100 rounded text-sm overflow-x-auto"></pre>
+  </div>
 </body>
 </html>
