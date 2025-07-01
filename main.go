@@ -10,8 +10,9 @@ import (
 )
 
 type CompileRequest struct {
-	Code string `json:"code"`
-	Mode string `json:"mode"` // e.g. "asm", "ir"
+	Code     string `json:"code"`
+	Compiler string `json:"compiler"` // "gcc", "clang"
+	Mode     string `json:"mode"`     // "preprocess", "ir", "asm", "obj", "bin", "hex"
 }
 
 type CompileResponse struct {
@@ -36,14 +37,35 @@ func compileHandler(w http.ResponseWriter, r *http.Request) {
 	tmpFile.Close()
 
 	var cmd *exec.Cmd
-	switch req.Mode {
-	case "asm":
-		cmd = exec.Command("gcc", "-S", tmpFile.Name(), "-o", "-")
-	case "ir":
-		cmd = exec.Command("clang", "-S", "-emit-llvm", tmpFile.Name(), "-o", "-")
-	default:
-		http.Error(w, "unsupported mode", http.StatusBadRequest)
-		return
+	switch req.Compiler {
+	case "gcc":
+		switch req.Mode {
+		case "preprocess":
+			cmd = exec.Command("gcc", "-E", tmpFile.Name(), "-o", "-")
+		case "asm":
+			cmd = exec.Command("gcc", "-S", tmpFile.Name(), "-o", "-")
+		case "bin":
+			cmd = exec.Command("gcc", "-c", tmpFile.Name(), "-o", "-")
+		default:
+			http.Error(w, "unsupported mode", http.StatusBadRequest)
+			return
+		}
+	case "clang":
+		switch req.Mode {
+		case "preprocess":
+			cmd = exec.Command("clang", "-E", tmpFile.Name(), "-o", "-")
+		case "asm":
+			cmd = exec.Command("clang", "-S", tmpFile.Name(), "-o", "-")
+		case "llvm ir":
+			cmd = exec.Command("clang", "-S", "-emit-llvm", tmpFile.Name(), "-o", "-")
+		case "bitcode":
+			cmd = exec.Command("clang", "-c", "-emit-llvm", tmpFile.Name(), "-o", "-")
+		case "bin":
+			cmd = exec.Command("clang", "-c", tmpFile.Name(), "-o", "-")
+		default:
+			http.Error(w, "unsupported mode", http.StatusBadRequest)
+			return
+		}
 	}
 
 	output, err := cmd.CombinedOutput()
