@@ -1,8 +1,11 @@
+#%%
 from flask import Flask, request, jsonify, send_from_directory
 import tempfile
 import subprocess
 import os
+import binascii
 
+#%%
 app = Flask(__name__, static_folder='public', static_url_path='')
 
 @app.route('/')
@@ -46,8 +49,11 @@ def compile_code():
                 cmd = ['clang', '-c', tmp_path, '-o', '-']
             else:
                 return jsonify({'error': 'unsupported mode', 'output': ''}), 400
-
-        output = subprocess.check_output(cmd, stderr=subprocess.STDOUT).decode()
+        if mode == 'bin':
+            output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+            output = binascii.hexlify(output).decode()
+        else:
+            output = subprocess.check_output(cmd, stderr=subprocess.STDOUT).decode()
     except subprocess.CalledProcessError as e:
         output = e.output.decode()
         err = str(e)
@@ -56,6 +62,6 @@ def compile_code():
 
     return jsonify({'output': output, 'error': err})
 
-
+#%%
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=8080)
