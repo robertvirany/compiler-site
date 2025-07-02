@@ -34,7 +34,8 @@ def compile_code():
             elif mode == 'asm':
                 cmd = ['gcc', '-S', tmp_path, '-o', '-']
             elif mode == 'bin':
-                cmd = ['gcc', '-c', tmp_path, '-o', '-']
+                obj_path = tmp_path.replace('.c', '.o')
+                cmd = ['gcc', '-c', tmp_path, '-o', obj_path]
             else:
                 return jsonify({'error': 'unsupported mode', 'output': ''}), 400
 
@@ -49,9 +50,13 @@ def compile_code():
                 cmd = ['clang', '-c', tmp_path, '-o', '-']
             else:
                 return jsonify({'error': 'unsupported mode', 'output': ''}), 400
-        if mode == 'bin':
+        if mode == 'bin' and compiler == 'clang':
             output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
             output = binascii.hexlify(output).decode()
+        elif mode == 'bin' and compiler == 'gcc':
+            output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+            with open(obj_path, 'rb') as f:
+                output = binascii.hexlify(f.read()).decode()
         else:
             output = subprocess.check_output(cmd, stderr=subprocess.STDOUT).decode()
     except subprocess.CalledProcessError as e:
@@ -59,6 +64,8 @@ def compile_code():
         err = str(e)
     finally:
         os.remove(tmp_path)
+        if mode == 'bin' and 'obj_path' in locals():
+            os.remove(obj_path)
 
     return jsonify({'output': output, 'error': err})
 
