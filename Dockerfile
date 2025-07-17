@@ -1,14 +1,12 @@
-FROM golang:1.22-bullseye AS builder
+FROM python:3.12-slim
 
 WORKDIR /app
-COPY . .
 
-RUN go build -ldflags="-s -w" -o server main.go
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
+COPY . ./
 
+EXPOSE 8080
 
-FROM scratch
-COPY --from=builder /app/server /server
-COPY public/ /public
-EXPOSE 80
-ENTRYPOINT ["/server"]
+CMD ["python", "app.py"]
